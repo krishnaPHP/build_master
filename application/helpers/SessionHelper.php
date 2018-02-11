@@ -4,7 +4,7 @@
  * Date: 30-11-2017
  */
 
-namespace Application\Helper;
+namespace Application\Helpers;
 
 class SessionHelper
 {

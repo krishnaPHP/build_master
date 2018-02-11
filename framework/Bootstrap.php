@@ -50,7 +50,7 @@ class Bootstrap
 
         $controller = new $controller_name;
         $action = ACTION;
-        $params = PARAMS ? explode(",", PARAMS) : array();
+        $params = PARAMS ? array_filter(explode(",", PARAMS)) : array();
 
         call_user_func_array(array($controller, $action), $params);
     }

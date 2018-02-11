@@ -10,6 +10,12 @@ namespace Application\Core;
 
 class Controller extends \Framework\Core\Controller
 {
+    public function isAuthenticated()
+    {
+        $session = new \Application\Helpers\SessionHelper();
+        return $session->get('authenticated') === true;
+    }
+
     public function loadModel($model)
     {
         return new $model();
@@ -27,7 +33,7 @@ class Controller extends \Framework\Core\Controller
 
     public function isPost()
     {
-        return isset($_POST);
+        return isset($_POST) && count($_POST) > 0;
     }
 
     public function isGet()
@@ -37,18 +43,18 @@ class Controller extends \Framework\Core\Controller
 
     public function getPost($key = null)
     {
-        if (!isset($_POST) || count($_POST) == 0) {
-            return null;
-        }
-        return isset($_POST[$key]) ? $this->sanitize($_POST[$key]) : $this->sanitize($_POST);
+        $post = filter_input_array(INPUT_POST, FILTER_SANITIZE_STRING);
+        if (count($post) == 0) return null;
+        if ($key) return isset($post[$key]) ? $this->sanitize($post[$key]) : null;
+        return $this->sanitize($post);
     }
 
     public function getGet($key = null)
     {
-        if (!isset($_GET) || count($_GET) == 0) {
-            return null;
-        }
-        return isset($_GET[$key]) ? $this->sanitize($_GET[$key]) : $this->sanitize($_GET);
+        $get = filter_input_array(INPUT_GET, FILTER_SANITIZE_STRING);
+        if (count($get) == 0) return null;
+        if ($key) return isset($get[$key]) ? $this->sanitize($get[$key]) : null;
+        return $this->sanitize($get);
     }
 
     public function getFile($key = null)
@@ -67,12 +73,6 @@ class Controller extends \Framework\Core\Controller
         exit;
     }
 
-    public function isAuthenticated()
-    {
-        $session = new \Application\Helper\SessionHelper();
-        return $session->get('authenticated') === true;
-    }
-
     private function sanitize($value)
     {
         // sanitize array or string values
@@ -81,7 +81,6 @@ class Controller extends \Framework\Core\Controller
         } else {
             $this->sanitize_value($value);
         }
-
         return $value;
     }
 

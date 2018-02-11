@@ -3,9 +3,9 @@
 // DB Config
 $config['host'] = "localhost";
 
-$config['username'] = "ex@m@dm!nusr";
+$config['username'] = "root";
 
-$config['password'] = "ex@m@dm!npwd";
+$config['password'] = "root";
 
 $config['port'] = "3306";
 

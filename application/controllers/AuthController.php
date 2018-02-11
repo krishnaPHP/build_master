@@ -6,7 +6,7 @@
  * Date: 08-02-2018
  */
 
-namespace Application\Controller;
+namespace Application\Controllers;
 
 class AuthController extends \Application\Core\Controller
 {
@@ -26,11 +26,11 @@ class AuthController extends \Application\Core\Controller
             $username = $this->getPost('username');
             $password = $this->getPost('password');
 
-            $model = $this->loadModel('\Application\Model\User');
+            $model = $this->loadModel('\Application\Models\User');
             $users = $model->findAll();
             foreach ($users as $user) {
                 if ($user->username == $username && $user->password == $password) {
-                    $session = new \Application\Helper\SessionHelper();
+                    $session = new \Application\Helpers\SessionHelper();
                     $session->set('authenticated', true);
                     $session->set('username', $username);
                     break;
@@ -48,7 +48,7 @@ class AuthController extends \Application\Core\Controller
 
     public function logout()
     {
-        $session = new \Application\Helper\SessionHelper();
+        $session = new \Application\Helpers\SessionHelper();
         $session->destroy();
         $this->redirect('auth');
     }

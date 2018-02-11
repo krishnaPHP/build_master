@@ -66,8 +66,7 @@ class Mysql
     public function getRow($sql)
     {
         $result = $this->query($sql);
-        $row = mysql_fetch_object($result);
-        return $row;
+        return mysql_fetch_object($result);
     }
 
     /**

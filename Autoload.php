@@ -19,6 +19,7 @@ class AutoLoad
             'application/',
             'application/core/',
             'application/controllers/',
+            'application/helpers/',
             'application/models/');
 
         //list of comma separated file format

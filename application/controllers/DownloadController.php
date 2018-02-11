@@ -8,74 +8,100 @@
 
 namespace Application\Controllers;
 
-
 use Application\Core\Config;
+use Application\Models\DownloadRequest;
 
 class DownloadController extends \Application\Core\Controller
 {
-    const STATUS_STARTED = "STARTED";
-    const STATUS_COMPLETED = "COMPLETED";
+    private $buildPath, $buildDownloadPath;
 
-    private $buildPath;
+    /**
+     * @var $buildModel \Application\Models\Build
+     */
+    private $buildModel;
+
+    /**
+     * @var $serialNumberModel \Application\Models\SerialNumber
+     */
+    private $serialNumberModel;
+
+    /**
+     * @var \Application\Models\DownloadRequest
+     */
+    private $downloadRequestModel;
 
     public function __construct()
     {
         parent::__construct();
 
         $this->buildPath = Config::getConfig('build_path');
+        $this->buildDownloadPath = Config::getConfig('build_download_path');
+
+        $this->buildModel = $this->loadModel('\Application\Models\Build');
+        $this->serialNumberModel = $this->loadModel('\Application\Models\SerialNumber');
+        $this->downloadRequestModel = $this->loadModel('\Application\Models\DownloadRequest');
     }
 
-    public function index()
+    public function index($serialNumber)
     {
-        if ($this->isGet()) {
-            $serialNumber = $this->getGet('serialNumber');
-            $serialNumberInfo = $this->getSerialNumberInfo($serialNumber);
-            if ($serialNumberInfo !== null) {
-                $build = $serialNumberInfo->build . "zip";
-                $buildDownload = $this->buildPath . "/" . $build;
-                $isBuildReady = $this->checkBuildReady($serialNumberInfo->build);
-                if (!$isBuildReady)
-                    $this->createBuild($serialNumberInfo->build);
+        try {
 
-                if ($isBuildReady) {
+            $sNInfo = $this->getSerialNumberInfo($serialNumber);
+            if ($sNInfo) {
+                $build = $this->getBuild($sNInfo->build_id);
+                if ($build) {
+                    $buildName = $build->build_name . ".zip";
+                    $downloadPath = $this->buildDownloadPath . "/" . $buildName;
+                    $isBuildReady = $this->checkBuildReady($downloadPath);
+                    if ($isBuildReady) {
+                        $this->trackDownloadRequest($build->build_id, $serialNumber, DownloadRequest::STATUS_STARTED);
 
-                    $this->trackDownload($serialNumber, self::STATUS_STARTED, $buildDownload);
-
-                    header('Content-Type: application/zip');
-                    header('Content-Disposition: attachment; filename="' . $build . '"');
-                    header('Content-Length: ' . filesize($buildDownload));
-                    readfile($buildDownload);
-                    exit();
+                        header('Content-Type: application/zip');
+                        header('Content-Disposition: attachment; filename="' . $buildName . '"');
+                        header('Content-Length: ' . filesize($downloadPath));
+                        readfile($downloadPath);
+                        exit();
+                    }
                 }
             }
+        } catch (\Exception $e) {
         }
     }
 
-    public function updateCompleted($serialNumber)
+    public function trackCompleted($serialNumber)
     {
-        $this->trackDownload($serialNumber, self::STATUS_COMPLETED);
+        try {
+            $sNInfo = $this->getSerialNumberInfo($serialNumber);
+            if ($sNInfo !== null) {
+                $build = $this->getBuild($sNInfo->build_id);
+                $this->trackDownloadRequest($build->id, $serialNumber, DownloadRequest::STATUS_COMPLETED);
+            }
+        } catch (\Exception $e) {
+        }
     }
 
     private function getSerialNumberInfo($serialNumber)
     {
-
+        $sNInfo = $this->serialNumberModel->getBySerialNumber($serialNumber);
+        return $sNInfo;
     }
 
-    private function checkBuildReady($build)
+    private function getBuild($build_id)
     {
-        $downloadBuild = $this->buildPath . "/" . "$build.zip";
-        if (file_exists($downloadBuild))
+        $buildInfo = $this->buildModel->getById($build_id);
+        return $buildInfo;
+    }
+
+    private function checkBuildReady($downloadPath)
+    {
+        if (@file_get_contents($downloadPath, 0, NULL, 0, 1))
             return true;
         return false;
     }
 
-    private function createBuild($build)
+    private function trackDownloadRequest($build, $serialNumber, $status)
     {
-
-    }
-
-    private function trackDownload($serialNumber, $status, $buildPath = null)
-    {
-
+        $status = $this->downloadRequestModel->track($build, $serialNumber, $status);
+        return $status;
     }
 }

@@ -16,9 +16,4 @@ class DashboardController extends \Application\Core\Controller
         $view->render();
     }
 
-    public function greet($message)
-    {
-        echo "Greeting from application: " . $message;
-    }
-
 }
